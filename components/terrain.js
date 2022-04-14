@@ -12,19 +12,20 @@ function createTerrain() {
   }
   // create a default (white) Basic material
   const material = new MeshStandardMaterial(spec);
-//   var heightmap = new Array(width,height);
-//   for(var y=0; y<height; y++){
-//     for(var x=0; x<height; x++){
-//         heightmap[y][x] = PerlinNoise(y,x);
-//     }
-//   }
-
-
+   var heightmap = new Array(width,height);
+  for(var y=0; y<height; y++){
+    for(var x=0; x<height; x++){
+        heightmap[y][x] = getNoise(y,x);
+    }
+  }
   // create a Mesh containing the geometry and material
   const terrain = new Mesh(geometry, material);
   terrain.rotation.set(-1.5, 0.0, 0.0);
 
   return terrain;
+}
+function getNoise(x, y){
+
 }
 
 export { createTerrain };
