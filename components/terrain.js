@@ -25,6 +25,7 @@ function createTerrain() {
   const geometry = new PlaneBufferGeometry(width, height, xSegment, ySegment);
   // create a Mesh containing the geometry and material
   const terrain = new Mesh(geometry, material);
+  terrain.receiveShadow = true;
   terrain.rotation.set(-1.5, 0.0, 0.0);
 
   return terrain;
