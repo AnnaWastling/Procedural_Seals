@@ -1,19 +1,11 @@
-//import * as THREE from '../node_modules/three';
-import { OrbitControls } from '../node_modules/three/examples/jsm/controls/OrbitControls.js';
-import {GLTFLoader} from '../node_modules/three/examples/jsm/loaders/GLTFLoader.js'
-import * as SkeletonUtils from '../node_modules/three/examples/jsm/utils/SkeletonUtils.js';
-import { DirectionalLight, AmbientLight } from '../node_modules/three/build/three.module.js';
-import { PerspectiveCamera  } from '../node_modules/three/build/three.module.js';
-import { Scene } from '../node_modules/three/build/three.module.js';
-import { WebGLRenderer } from '../node_modules/three/build/three.module.js';
-import {  PlaneGeometry, Mesh, MeshBasicMaterial, Vector2, Vector3, Raycaster } from '../node_modules/three/build/three.module.js';
-import { Clock } from '../node_modules/three/src/core/Clock.js';
-import {AnimationMixer} from '../node_modules/three/src/animation/AnimationMixer.js'
-import { AnimationClip } from '../node_modules/three/src/animation/AnimationClip.js';
+import * as THREE from '/node_modules/three/build/three.module.js';
+import { OrbitControls } from '/node_modules/three/examples/jsm/controls/OrbitControls.js';
+import {GLTFLoader} from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js'
+import * as SkeletonUtils from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
 
-const modelUrl = new URL('../seal.glb', import.meta.url);
+const modelUrl = new URL('seal.glb', import.meta.url);
 
-const renderer = new WebGLRenderer({antialias: true});
+const renderer = new THREE.WebGLRenderer({antialias: true});
 
 renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -21,9 +13,9 @@ renderer.setClearColor(0xA3A3A3);
 
 document.body.appendChild(renderer.domElement);
 
-const scene = new Scene();
+const scene = new THREE.Scene();
 
-const camera = new PerspectiveCamera(
+const camera = new THREE.PerspectiveCamera(
     45,
     window.innerWidth / window.innerHeight,
     0.1,
@@ -35,10 +27,10 @@ const orbit = new OrbitControls(camera, renderer.domElement);
 camera.position.set(10, 6, 10);
 orbit.update();
 
-const ambientLight = new AmbientLight(0x333333);
+const ambientLight = new THREE.AmbientLight(0x333333);
 scene.add(ambientLight);
 
-const directionalLight = new DirectionalLight(0xFFFFFF, 1);
+const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
 scene.add(directionalLight);
 directionalLight.position.set(3, 3, 3);
 
@@ -55,9 +47,9 @@ assetLoader.load(modelUrl.href, function(gltf) {
     console.error(error);
 });
 
-const planeMesh = new Mesh(
-    new PlaneGeometry(20, 20),
-    new MeshBasicMaterial({
+const planeMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 20),
+    new THREE.MeshBasicMaterial({
         visible: false
     })
 );
@@ -66,9 +58,9 @@ scene.add(planeMesh);
 planeMesh.name = 'ground';
 
 /*remove*/
-const highlightMesh = new Mesh(
-    new PlaneGeometry(1, 1),
-    new MeshBasicMaterial({
+const highlightMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({
         transparent: false
     })
 );
@@ -77,8 +69,8 @@ highlightMesh.position.set(0.5, 0, 0.5);
 scene.add(highlightMesh);
 /*remove*/
 
-const mousePosition = new Vector2();
-const raycaster = new Raycaster();
+const mousePosition = new THREE.Vector2();
+const raycaster = new THREE.Raycaster();
 let intersects;
 
 window.addEventListener('mousemove', function(e) {
@@ -88,7 +80,7 @@ window.addEventListener('mousemove', function(e) {
     intersects = raycaster.intersectObjects(scene.children);
     intersects.forEach(function(intersect) {
         if(intersect.object.name === 'ground') {
-            const highlightPos = new Vector3().copy(intersect.point).floor().addScalar(0.5);
+            const highlightPos = new THREE.Vector3().copy(intersect.point).floor().addScalar(0.5);
             highlightMesh.position.set(highlightPos.x, 0, highlightPos.z);
 
             const objectExist = objects.find(function(object) {
@@ -122,8 +114,8 @@ window.addEventListener('mousedown', function() {
                 objects.push(sealClone);
                 highlightMesh.material.color.setHex(0xFF0000);
 
-                const mixer = new AnimationMixer(sealClone);
-                const clip = AnimationClip.findByName(clips, 'headAction');
+                const mixer = new THREE.AnimationMixer(sealClone);
+                const clip = THREE.AnimationClip.findByName(clips, 'headAction');
                 const action = mixer.clipAction(clip);
                 action.play();
                 mixers.push(mixer);
@@ -133,7 +125,7 @@ window.addEventListener('mousedown', function() {
     console.log(scene.children.length);
 });
 
-const clock = new Clock();
+const clock = new THREE.Clock();
 function animate(time) {
     highlightMesh.material.opacity = 1 + Math.sin(time / 120);
     const delta = clock.getDelta();
