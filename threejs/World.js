@@ -4,13 +4,14 @@ import {GLTFLoader} from '../node_modules/three/examples/jsm/loaders/GLTFLoader.
 import * as SkeletonUtils from '../node_modules/three/examples/jsm/utils/SkeletonUtils.js';
 import { DirectionalLight, AmbientLight } from '../node_modules/three/build/three.module.js';
 import { PerspectiveCamera  } from '../node_modules/three/build/three.module.js';
-import { Color, Scene } from '../node_modules/three/build/three.module.js';
+import { Scene } from '../node_modules/three/build/three.module.js';
 import { WebGLRenderer } from '../node_modules/three/build/three.module.js';
 import {  PlaneGeometry, Mesh, MeshBasicMaterial, Vector2, Vector3, Raycaster } from '../node_modules/three/build/three.module.js';
 import { Clock } from '../node_modules/three/src/core/Clock.js';
 import {AnimationMixer} from '../node_modules/three/src/animation/AnimationMixer.js'
+import { AnimationClip } from '../node_modules/three/src/animation/AnimationClip.js';
 
-const modelUrl = new URL('../NEWSEAL.glb', import.meta.url);
+const modelUrl = new URL('../seal.glb', import.meta.url);
 
 const renderer = new WebGLRenderer({antialias: true});
 
@@ -47,7 +48,7 @@ let seal;
 let clips;
 assetLoader.load(modelUrl.href, function(gltf) {
     const model = gltf.scene;
-    model.scale.set(0.3, 0.3, 0.3);
+    model.scale.set(0.2, 0.2, 0.2);
     seal = model;
     clips = gltf.animations;
 }, undefined, function(error) {
@@ -64,16 +65,17 @@ planeMesh.rotateX(-Math.PI / 2);
 scene.add(planeMesh);
 planeMesh.name = 'ground';
 
-
+/*remove*/
 const highlightMesh = new Mesh(
     new PlaneGeometry(1, 1),
     new MeshBasicMaterial({
-        transparent: true
+        transparent: false
     })
 );
 highlightMesh.rotateX(-Math.PI / 2);
 highlightMesh.position.set(0.5, 0, 0.5);
 scene.add(highlightMesh);
+/*remove*/
 
 const mousePosition = new Vector2();
 const raycaster = new Raycaster();
@@ -115,12 +117,13 @@ window.addEventListener('mousedown', function() {
             if(intersect.object.name === 'ground') {
                 const sealClone = SkeletonUtils.clone(seal);
                 sealClone.position.copy(highlightMesh.position);
+                sealClone.rotateY(Math.PI/Math.random());
                 scene.add(sealClone);
                 objects.push(sealClone);
                 highlightMesh.material.color.setHex(0xFF0000);
 
                 const mixer = new AnimationMixer(sealClone);
-                const clip = seal.animations[0];
+                const clip = AnimationClip.findByName(clips, 'headAction');
                 const action = mixer.clipAction(clip);
                 action.play();
                 mixers.push(mixer);
@@ -133,7 +136,6 @@ window.addEventListener('mousedown', function() {
 const clock = new Clock();
 function animate(time) {
     highlightMesh.material.opacity = 1 + Math.sin(time / 120);
-
     const delta = clock.getDelta();
     mixers.forEach(function(mixer) {
         mixer.update(delta);
