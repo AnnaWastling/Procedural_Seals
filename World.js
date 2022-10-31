@@ -2,6 +2,8 @@ import * as THREE from '/node_modules/three/build/three.module.js';
 import { OrbitControls } from '/node_modules/three/examples/jsm/controls/OrbitControls.js';
 import {GLTFLoader} from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js'
 import * as SkeletonUtils from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
+import { ImprovedNoise } from '/node_modules/three/examples/jsm/math/ImprovedNoise.js';
+import { SimplexNoise } from '/node_modules/three/examples/jsm/math/SimplexNoise.js';
 
 const modelUrl = new URL('seal.glb', import.meta.url);
 
@@ -37,61 +39,53 @@ directionalLight.position.set(3, 3, 3);
 const assetLoader = new GLTFLoader();
 
 let seal;
-let clips;
+const objects = [];
+const mixers = [];
 assetLoader.load(modelUrl.href, function(gltf) {
     const model = gltf.scene;
-    model.scale.set(0.2, 0.2, 0.2);
     seal = model;
-    clips = gltf.animations;
     for (let index = 0; index < 200; index++) {
         const sealClone = SkeletonUtils.clone(seal);
-        sealClone.position.set(Math.random()*-20, 0, Math.random()*-20);
+        sealClone.position.set(Math.random()*-200, 0, Math.random()*-200);
         sealClone.rotateY(Math.PI/Math.random());
         objects.push(sealClone);
         const mixer = new THREE.AnimationMixer(sealClone);
-        for (let index = 0; index < 2; index++) {
-            const clip = gltf.animations[index]
-            const action = mixer.clipAction(clip);
-            action.play();
-        }
+        var randomnumber = Math.floor(Math.random() * (1 - 0 + 1)) + 0;
+        const clip = gltf.animations[randomnumber]
+        const action = mixer.clipAction(clip);
+        action.play();
         mixers.push(mixer);
     }
 
+    // const color = new THREE.Color();
+    // const palette = [ 0xF20587, 0xF2D479, 0xF2C879, 0xF2B077, 0xF24405 ]; 
+    // color.setHex( palette[ Math.floor( Math.random() * palette.length ) ] );
+    // sealMesh.setColorAt(i, color);
+    
     for (let i = 0; i < objects.length; i++) {
         const box_i = new THREE.Box3();
         box_i.setFromObject(objects[i]);
+        box_i.expandByScalar(5);
         for (let j = i+1; j < objects.length; j++) {
             const box_j = new THREE.Box3();
             box_j.setFromObject(objects[j]);
-            if(box_j.intersectsBox(box_i)){
-                const boxh = new THREE.BoxHelper( objects[i], 0xffff00 );
-                scene.add( boxh );  
+            box_j.expandByScalar(5);
+            if(box_i.intersectsBox(box_j)){
+                // const boxh = new THREE.BoxHelper( objects[i], 0xa3403c);
+                // scene.add( boxh );
+                break;
             }else{
                 scene.add(objects[i]);
             }     
         }
     }
-
 }, undefined, function(error) {
     console.error(error);
 });
-
-const planeMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(50, 50),
-    new THREE.MeshBasicMaterial({
-        visible: true
-    })
-);
-planeMesh.rotateX(-Math.PI / 2);
-planeMesh.position.set(-20,0, -20);
-scene.add(planeMesh);
-planeMesh.name = 'ground';
-
-const objects = [];
-const mixers = [];
+MakeTerrain();
 
 const clock = new THREE.Clock();
-function animate(time) {
+function animate() {
     const delta = clock.getDelta();
     mixers.forEach(function(mixer) {
         mixer.update(delta);
@@ -106,3 +100,71 @@ window.addEventListener('resize', function() {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+function MakeTerrain()
+{
+    const geometry = new THREE.BufferGeometry();
+
+    const indices = [];
+    const vertices = [];
+    const normals = [];
+    const colors = [];
+
+    const size = 500;
+    const segments = 50;
+
+    const halfSize = size / 2;
+    const segmentSize = size / segments;
+
+    // generate vertices, normals and color data for a simple grid geometry
+
+    for ( let i = 0; i <= segments; i ++ ) {
+        for ( let j = 0; j <= segments; j ++ ) {
+            const perlin = new SimplexNoise();
+            const z = ( i * segmentSize ) - halfSize
+            const x = ( j * segmentSize ) - halfSize;
+            const y = Math.abs(perlin.noise(x/halfSize, 1, z/halfSize) * segmentSize );
+            vertices.push( x, y*-1, z);
+            normals.push( 0, 1, 0 );
+
+            const r = ( x / size ) + 0.5;
+            const b = ( z / size ) + 0.5;
+
+            colors.push( r, 0, b );
+
+        }
+
+    }
+
+    // generate indices (data for element array buffer)
+    for ( let i = 0; i < segments; i ++ ) {
+
+        for ( let j = 0; j < segments; j ++ ) {
+
+            const a = i * ( segments + 1 ) + ( j + 1 );
+            const b = i * ( segments + 1 ) + j;
+            const c = ( i + 1 ) * ( segments + 1 ) + j;
+            const d = ( i + 1 ) * ( segments + 1 ) + ( j + 1 );
+
+            // generate two faces (triangles) per iteration
+            indices.push( a, b, d ); // face one
+            indices.push( b, c, d ); // face two
+
+        }
+
+    }
+
+    geometry.setIndex( indices );
+    geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+    geometry.setAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
+    geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+
+    const material = new THREE.MeshPhongMaterial( {
+        side: THREE.DoubleSide,
+        vertexColors: true
+    } );
+
+    const mesh = new THREE.Mesh( geometry, material );
+    scene.add(mesh);
+
+}
