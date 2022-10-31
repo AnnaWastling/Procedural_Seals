@@ -43,91 +43,55 @@ assetLoader.load(modelUrl.href, function(gltf) {
     model.scale.set(0.2, 0.2, 0.2);
     seal = model;
     clips = gltf.animations;
+    for (let index = 0; index < 200; index++) {
+        const sealClone = SkeletonUtils.clone(seal);
+        sealClone.position.set(Math.random()*-20, 0, Math.random()*-20);
+        sealClone.rotateY(Math.PI/Math.random());
+        objects.push(sealClone);
+        const mixer = new THREE.AnimationMixer(sealClone);
+        for (let index = 0; index < 2; index++) {
+            const clip = gltf.animations[index]
+            const action = mixer.clipAction(clip);
+            action.play();
+        }
+        mixers.push(mixer);
+    }
+
+    for (let i = 0; i < objects.length; i++) {
+        const box_i = new THREE.Box3();
+        box_i.setFromObject(objects[i]);
+        for (let j = i+1; j < objects.length; j++) {
+            const box_j = new THREE.Box3();
+            box_j.setFromObject(objects[j]);
+            if(box_j.intersectsBox(box_i)){
+                const boxh = new THREE.BoxHelper( objects[i], 0xffff00 );
+                scene.add( boxh );  
+            }else{
+                scene.add(objects[i]);
+            }     
+        }
+    }
+
 }, undefined, function(error) {
     console.error(error);
 });
 
 const planeMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(20, 20),
+    new THREE.PlaneGeometry(50, 50),
     new THREE.MeshBasicMaterial({
-        visible: false
+        visible: true
     })
 );
 planeMesh.rotateX(-Math.PI / 2);
+planeMesh.position.set(-20,0, -20);
 scene.add(planeMesh);
 planeMesh.name = 'ground';
 
-/*remove*/
-const highlightMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(1, 1),
-    new THREE.MeshBasicMaterial({
-        transparent: false
-    })
-);
-highlightMesh.rotateX(-Math.PI / 2);
-highlightMesh.position.set(0.5, 0, 0.5);
-scene.add(highlightMesh);
-/*remove*/
-
-const mousePosition = new THREE.Vector2();
-const raycaster = new THREE.Raycaster();
-let intersects;
-
-window.addEventListener('mousemove', function(e) {
-    mousePosition.x = (e.clientX / window.innerWidth) * 2 - 1;
-    mousePosition.y = -(e.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(mousePosition, camera);
-    intersects = raycaster.intersectObjects(scene.children);
-    intersects.forEach(function(intersect) {
-        if(intersect.object.name === 'ground') {
-            const highlightPos = new THREE.Vector3().copy(intersect.point).floor().addScalar(0.5);
-            highlightMesh.position.set(highlightPos.x, 0, highlightPos.z);
-
-            const objectExist = objects.find(function(object) {
-                return (object.position.x === highlightMesh.position.x)
-                && (object.position.z === highlightMesh.position.z)
-            });
-
-            if(!objectExist)
-                highlightMesh.material.color.setHex(0xFFFFFF);
-            else
-                highlightMesh.material.color.setHex(0xFF0000);
-        }
-    });
-});
-
 const objects = [];
 const mixers = [];
-window.addEventListener('mousedown', function() {
-    const objectExist = objects.find(function(object) {
-        return (object.position.x === highlightMesh.position.x)
-        && (object.position.z === highlightMesh.position.z)
-    });
-
-    if(!objectExist) {
-        intersects.forEach(function(intersect) {
-            if(intersect.object.name === 'ground') {
-                const sealClone = SkeletonUtils.clone(seal);
-                sealClone.position.copy(highlightMesh.position);
-                sealClone.rotateY(Math.PI/Math.random());
-                scene.add(sealClone);
-                objects.push(sealClone);
-                highlightMesh.material.color.setHex(0xFF0000);
-
-                const mixer = new THREE.AnimationMixer(sealClone);
-                const clip = THREE.AnimationClip.findByName(clips, 'headAction');
-                const action = mixer.clipAction(clip);
-                action.play();
-                mixers.push(mixer);
-            }
-        });
-    }
-    console.log(scene.children.length);
-});
 
 const clock = new THREE.Clock();
 function animate(time) {
-    highlightMesh.material.opacity = 1 + Math.sin(time / 120);
     const delta = clock.getDelta();
     mixers.forEach(function(mixer) {
         mixer.update(delta);
