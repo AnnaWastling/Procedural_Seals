@@ -45,7 +45,7 @@ assetLoader.load(modelUrl.href, function(gltf) {
     seal = model;
     for (let index = 0; index < 200; index++) {
         const sealClone = SkeletonUtils.clone(seal);
-        sealClone.position.set(Math.random()*-200, 10, Math.random()*-200);
+        sealClone.position.set(Math.random()*-300, 10, Math.random()*-300);
         // var testLineMaterial = new THREE.LineBasicMaterial({ color: 0xFF0000 });
         // var points = [];
         // points.push(new THREE.Vector3(sealClone.position.x, sealClone.position.y + 10, sealClone.position.z));
@@ -134,7 +134,7 @@ function MakeTerrain()
             const perlin = new ImprovedNoise();
             const z = ( i * segmentSize ) - halfSize
             const x = ( j * segmentSize ) - halfSize;
-            const y = Math.abs(perlin.noise(x/halfSize, 1, z/halfSize) * segmentSize*2.5 );
+            const y = Math.abs(perlin.noise(x/halfSize, 1, z/halfSize) * segmentSize*5 );
             vertices.push( x, y, z);
             normals.push( 0, 1, 0 );
 
@@ -175,6 +175,7 @@ function MakeTerrain()
     } );
 
     const mesh = new THREE.Mesh( geometry, material );
+    mesh.position.set(-150,0,-150);
     scene.add(mesh);
     return mesh;
 }
