@@ -35,9 +35,8 @@ scene.add(ambientLight);
 const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
 scene.add(directionalLight);
 directionalLight.position.set(3, 3, 3);
-
+const terrainMesh = MakeTerrain();
 const assetLoader = new GLTFLoader();
-
 let seal;
 const objects = [];
 const mixers = [];
@@ -46,7 +45,21 @@ assetLoader.load(modelUrl.href, function(gltf) {
     seal = model;
     for (let index = 0; index < 200; index++) {
         const sealClone = SkeletonUtils.clone(seal);
-        sealClone.position.set(Math.random()*-200, 0, Math.random()*-200);
+        sealClone.position.set(Math.random()*-200, 10, Math.random()*-200);
+        // var testLineMaterial = new THREE.LineBasicMaterial({ color: 0xFF0000 });
+        // var points = [];
+        // points.push(new THREE.Vector3(sealClone.position.x, sealClone.position.y + 10, sealClone.position.z));
+        // points.push(new THREE.Vector3(sealClone.position.x, sealClone.position.y - 10, sealClone.position.z));
+        // var geometry = new THREE.BufferGeometry().setFromPoints(points);
+        // var line = new THREE.Line(geometry, testLineMaterial);
+        // scene.add(line);
+        // See if the ray hits the terrain
+        const raycaster = new THREE.Raycaster(new THREE.Vector3(sealClone.position.x, sealClone.position.y + 2, sealClone.position.z), new THREE.Vector3(0, -1, 0));
+        const intersects = raycaster.intersectObject(terrainMesh);
+        if ( intersects.length > 0 ) {
+            sealClone.lookAt( intersects[ 0 ].face.normal );
+            sealClone.position.copy( intersects[ 0 ].point );
+        }
         sealClone.rotateY(Math.PI/Math.random());
         objects.push(sealClone);
         const mixer = new THREE.AnimationMixer(sealClone);
@@ -82,7 +95,6 @@ assetLoader.load(modelUrl.href, function(gltf) {
 }, undefined, function(error) {
     console.error(error);
 });
-MakeTerrain();
 
 const clock = new THREE.Clock();
 function animate() {
@@ -117,14 +129,13 @@ function MakeTerrain()
     const segmentSize = size / segments;
 
     // generate vertices, normals and color data for a simple grid geometry
-
     for ( let i = 0; i <= segments; i ++ ) {
         for ( let j = 0; j <= segments; j ++ ) {
-            const perlin = new SimplexNoise();
+            const perlin = new ImprovedNoise();
             const z = ( i * segmentSize ) - halfSize
             const x = ( j * segmentSize ) - halfSize;
-            const y = Math.abs(perlin.noise(x/halfSize, 1, z/halfSize) * segmentSize );
-            vertices.push( x, y*-1, z);
+            const y = Math.abs(perlin.noise(x/halfSize, 1, z/halfSize) * segmentSize*2.5 );
+            vertices.push( x, y, z);
             normals.push( 0, 1, 0 );
 
             const r = ( x / size ) + 0.5;
@@ -151,7 +162,6 @@ function MakeTerrain()
             indices.push( b, c, d ); // face two
 
         }
-
     }
 
     geometry.setIndex( indices );
@@ -166,5 +176,5 @@ function MakeTerrain()
 
     const mesh = new THREE.Mesh( geometry, material );
     scene.add(mesh);
-
+    return mesh;
 }
