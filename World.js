@@ -34,17 +34,15 @@ scene.add(ambientLight);
 
 const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
 scene.add(directionalLight);
-directionalLight.position.set(3, 3, 3);
+directionalLight.position.set(10, 10, 0);
 const terrainMesh = MakeTerrain();
 const assetLoader = new GLTFLoader();
-let seal;
 const objects = [];
 const mixers = [];
 assetLoader.load(modelUrl.href, function(gltf) {
     const model = gltf.scene;
-    seal = model;
-    for (let index = 0; index < 200; index++) {
-        const sealClone = SkeletonUtils.clone(seal);
+    for (let index = 0; index < 20; index++) {
+        const sealClone = SkeletonUtils.clone(model);
         sealClone.position.set(Math.random()*-300, 10, Math.random()*-300);
         // var testLineMaterial = new THREE.LineBasicMaterial({ color: 0xFF0000 });
         // var points = [];
@@ -54,7 +52,7 @@ assetLoader.load(modelUrl.href, function(gltf) {
         // var line = new THREE.Line(geometry, testLineMaterial);
         // scene.add(line);
         // See if the ray hits the terrain
-        const raycaster = new THREE.Raycaster(new THREE.Vector3(sealClone.position.x, sealClone.position.y + 2, sealClone.position.z), new THREE.Vector3(0, -1, 0));
+        const raycaster = new THREE.Raycaster(new THREE.Vector3(sealClone.position.x, sealClone.position.y + 20, sealClone.position.z), new THREE.Vector3(0, -1, 0));
         const intersects = raycaster.intersectObject(terrainMesh);
         if ( intersects.length > 0 ) {
             sealClone.lookAt( intersects[ 0 ].face.normal );
@@ -63,17 +61,12 @@ assetLoader.load(modelUrl.href, function(gltf) {
         sealClone.rotateY(Math.PI/Math.random());
         objects.push(sealClone);
         const mixer = new THREE.AnimationMixer(sealClone);
-        var randomnumber = Math.floor(Math.random() * (1 - 0 + 1)) + 0;
+        var randomnumber = Math.floor(Math.random() * (2 - 0 + 2)) + 0;
         const clip = gltf.animations[randomnumber]
         const action = mixer.clipAction(clip);
         action.play();
         mixers.push(mixer);
     }
-
-    // const color = new THREE.Color();
-    // const palette = [ 0xF20587, 0xF2D479, 0xF2C879, 0xF2B077, 0xF24405 ]; 
-    // color.setHex( palette[ Math.floor( Math.random() * palette.length ) ] );
-    // sealMesh.setColorAt(i, color);
     
     for (let i = 0; i < objects.length; i++) {
         const box_i = new THREE.Box3();
@@ -88,6 +81,23 @@ assetLoader.load(modelUrl.href, function(gltf) {
                 // scene.add( boxh );
                 break;
             }else{
+                objects[i].traverse( ( object ) => {
+                    const color = new THREE.Color();
+                    const palette = [ 0x736749, 0x735b49, 0xcfb5a1, 0x4a433e, 0x4a4948 ];
+                    color.setHex( palette[ Math.floor( Math.random() * palette.length ) ] );
+                    if ( object.name == 'Cube001_1' && object.geometry ) {
+                        const material1 = new THREE.MeshLambertMaterial({ color: color });
+                        const material2 = new THREE.MeshLambertMaterial({ color: color });
+                        let materials = [material1, material2];
+                        let geometry = object.geometry;
+                        geometry.addGroup(0, Infinity, 0);
+                        geometry.addGroup(0, Infinity, 1);
+
+                        object.material = materials;
+                    }
+
+                } );
+                //console.log(objects[i]);
                 scene.add(objects[i]);
             }     
         }
@@ -132,16 +142,17 @@ function MakeTerrain()
     for ( let i = 0; i <= segments; i ++ ) {
         for ( let j = 0; j <= segments; j ++ ) {
             const perlin = new ImprovedNoise();
+            const noise = new SimplexNoise();
             const z = ( i * segmentSize ) - halfSize
             const x = ( j * segmentSize ) - halfSize;
-            const y = Math.abs(perlin.noise(x/halfSize, 1, z/halfSize) * segmentSize*5 );
+            const y = Math.abs(perlin.noise(x/halfSize, 1, z/halfSize) * segmentSize* 5 + noise.noise(x/size, 1, z/size) * segmentSize*0.2 );
             vertices.push( x, y, z);
             normals.push( 0, 1, 0 );
 
-            const r = ( x / size ) + 0.5;
-            const b = ( z / size ) + 0.5;
-
-            colors.push( r, 0, b );
+            const r = ( y / size)* 10;
+            const g = ( y / size)* 10;
+            const b = ( y / size)* 10;
+            colors.push( r*2, g*1.5, b );
 
         }
 
