@@ -1,11 +1,15 @@
 // import * as THREE from '/node_modules/three/build/three.module.js';
-import { OrbitControls } from '/node_modules/three/examples/jsm/controls/OrbitControls.js';
+//import { OrbitControls } from '/node_modules/three/examples/jsm/controls/OrbitControls.js';
 //import {GLTFLoader} from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js'
-import * as SkeletonUtils from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
-import { ImprovedNoise } from '/node_modules/three/examples/jsm/math/ImprovedNoise.js';
-import { SimplexNoise } from '/node_modules/three/examples/jsm/math/SimplexNoise.js';
+// import * as SkeletonUtils from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
+
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://unpkg.com/three@0.138.3/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/controls/OrbitControls.js';
+import { ImprovedNoise } from 'https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/math/ImprovedNoise.js';
+import { SimplexNoise } from 'https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/math/SimplexNoise.js';
+import {SkeletonUtils} from 'https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/utils/SkeletonUtils.js';
+
 const modelUrl = new URL('seal.glb', import.meta.url);
 
 //Scene init
