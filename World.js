@@ -8,11 +8,8 @@ import { SimplexNoise } from '/node_modules/three/examples/jsm/math/SimplexNoise
 const modelUrl = new URL('seal.glb', import.meta.url);
 
 const renderer = new THREE.WebGLRenderer({antialias: true});
-
 renderer.setSize(window.innerWidth, window.innerHeight);
-
 renderer.setClearColor(0xA3A3A3);
-
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -26,29 +23,37 @@ const camera = new THREE.PerspectiveCamera(
 
 const orbit = new OrbitControls(camera, renderer.domElement);
 
-camera.position.set(10, 6, 10);
+camera.position.set(10, -2, 10);
 orbit.update();
+const dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
+dirLight.color.setHSL( 0.1, 1, 0.95 );
+dirLight.position.set( 100, 100, 100);
+dirLight.castShadow = true;
 
-const ambientLight = new THREE.AmbientLight(0x333333);
-scene.add(ambientLight);
+// const helper = new THREE.DirectionalLightHelper( dirLight, 5 );
+// scene.add( helper );
 
-const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
-scene.add(directionalLight);
-directionalLight.position.set(10, 10, 0);
+const hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
+hemiLight.color.setHSL( 0.6, 1, 0.6 );
+hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
+hemiLight.position.set( -50, 20, -50 );
+// const helper2 = new THREE.HemisphereLightHelper( hemiLight, 5 );
+// scene.add( helper2 );
+scene.add( hemiLight, dirLight );
+
+
 const terrainMesh = MakeTerrain();
 const assetLoader = new GLTFLoader();
 const objects = [];
 const mixers = [];
+let count;
 assetLoader.load(modelUrl.href, function(gltf) {
-    // load a texture, set wrap mode to repeat
-    var texture = new THREE.TextureLoader().load( "sealUV.png" );
-    // texture.wrapT = THREE.RepeatWrapping;
-    // texture.wrapS = THREE.RepeatWrapping;
-    // texture.repeat.set(2,2);
     const model = gltf.scene;
-    for (let index = 0; index < 100; index++) {
+    count = 600;
+    
+    for (let index = 0; index < count; index++) {
         const sealClone = SkeletonUtils.clone(model);
-        sealClone.position.set(Math.random()*-150, 10, Math.random()*-150);
+        sealClone.position.set(Math.random()*-250, 10, Math.random()*-250);
         // var testLineMaterial = new THREE.LineBasicMaterial({ color: 0xFF0000 });
         // var points = [];
         // points.push(new THREE.Vector3(sealClone.position.x, sealClone.position.y + 10, sealClone.position.z));
@@ -87,20 +92,18 @@ assetLoader.load(modelUrl.href, function(gltf) {
                 break;
             }else{
                 objects[i].traverse( ( object ) => {
-                    if ( object.name == 'Cube001_1' && object.geometry) {
-                        //let tex = generateTexture();
+                    if ( object.name == 'Cube001_1') {
                         const color = new THREE.Color();      
-                        const palette = [ 0xcfb5a1, 0x4a433e, 0x4a4948 ];
+                        const palette = [ 0xedf2ef, 0x8c8981, 0x383736, 0x3d2712, 0xa3a3a3, 0x826051];
                         color.setHex(palette[Math.floor( Math.random() * palette.length )]);
-                        // const material = new THREE.MeshLambertMaterial({ 
-                        //     color:color,
-                        //     map: texture,
-                        // });
-                        //object.material = material;
+                        let clonedMaterial = object.material.clone();
                         object.material.color = color;
+                        object.material = clonedMaterial;
+                        object.material.color.set(color);
+                        object.castShadow = true;
+                        object.receiveShadow = true;
                     }
                 } );
-                //console.log(objects[i]);
                 scene.add(objects[i]);
             }     
         }
@@ -115,6 +118,7 @@ function animate() {
     mixers.forEach(function(mixer) {
         mixer.update(delta);
     });
+    orbit.update();
     renderer.render(scene, camera);
 }
 
@@ -137,7 +141,7 @@ function MakeTerrain()
 
 
     const size = 300;
-    const segments = 50;
+    const segments = 25;
 
     const halfSize = size / 2;
     const segmentSize = size / segments;
@@ -149,10 +153,14 @@ function MakeTerrain()
             const noise = new SimplexNoise();
             const z = (i * segmentSize) - halfSize
             const x = (j * segmentSize) - halfSize;
-            const y = Math.abs(perlin.noise(x/halfSize, 1, z/halfSize) * segmentSize* 5 + noise.noise(x/size, 1, z/size) * segmentSize*0.2 );
+            let y = Math.abs(perlin.noise(x/halfSize, 1, z/halfSize) * segmentSize* 5 + noise.noise(x/size, 1, z/size) * segmentSize*0.2 );
             vertices.push(x, y, z);
             normals.push(0, 1, 0);
-
+            if(y < 2 ){
+                y = 3; // to remove black color in terrain
+             }else if(y >12){
+                y = 11; // to remove white color in terrain
+             }
             const r = (y / size)* 10;
             const g = (y / size)* 10;
             const b = (y / size)* 10;
@@ -182,45 +190,25 @@ function MakeTerrain()
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
     const material = new THREE.MeshPhongMaterial({
-        side: THREE.DoubleSide,
         vertexColors: true
     });
 
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(-50,0,-50);
-    scene.add(mesh);
-    return mesh;
+    const ground = new THREE.Mesh(geometry, material);
+    ground.position.set(-100,-10,-100);
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    const groundGeo = new THREE.PlaneGeometry( 10000, 10000 );
+    const groundMat = new THREE.MeshLambertMaterial( { color: 0x91a9b3 } );
+
+    const water = new THREE.Mesh( groundGeo, groundMat );
+    water.position.y = - 8;
+    water.rotation.x = - Math.PI / 2;
+    water.receiveShadow = true;
+    scene.add( water );  
+
+
+    return ground;
 }
 
-// function generateTexture(){
-//     const color = new THREE.Color();      
-//     const palette = [ 0x736749, 0x735b49, 0xcfb5a1, 0x4a433e, 0x4a4948 ];
-//     color.setHex( palette[ Math.floor( Math.random() * palette.length ) ] );
-//     const width = 256;
-//     const height = 256;
-//     const size = width * height;
-//     const data = new Uint8Array( 4 * size );
-//     const perlin = new SimplexNoise();
-
-    
-//     for (let i = 0; i < size; i++) {
-        
-//         const r = Math.floor( color.r * 255);
-//         const g = Math.floor( color.g * 255);
-//         const b = Math.floor( color.b * 255);
-//         //console.log(r);
-//         const stride = i * 4;
-//         const scale = 50;
-//         data[ stride ] = r * Math.abs(perlin.noise(i/width * scale, i/width* scale, i/width* scale));
-//         data[ stride + 1 ] = g * Math.abs(perlin.noise(i/width* scale, i/width* scale, i/width* scale));
-//         data[ stride + 2 ] = b * Math.abs(perlin.noise(i/width* scale, i/width* scale, i/width* scale));
-//         data[ stride + 3 ] = 255;
-    
-//     }
-    
-//     // used the buffer to create a DataTexture
-//     const texture = new THREE.DataTexture( data, width, height );
-//     texture.needsUpdate = true;
-//     return texture;
-// }
 
