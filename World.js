@@ -1,9 +1,11 @@
-import * as THREE from '/node_modules/three/build/three.module.js';
+// import * as THREE from '/node_modules/three/build/three.module.js';
 import { OrbitControls } from '/node_modules/three/examples/jsm/controls/OrbitControls.js';
-import {GLTFLoader} from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js'
+//import {GLTFLoader} from '/node_modules/three/examples/jsm/loaders/GLTFLoader.js'
 import * as SkeletonUtils from '/node_modules/three/examples/jsm/utils/SkeletonUtils.js';
 import { ImprovedNoise } from '/node_modules/three/examples/jsm/math/ImprovedNoise.js';
 import { SimplexNoise } from '/node_modules/three/examples/jsm/math/SimplexNoise.js';
+import * as THREE from 'three';
+import { GLTFLoader } from 'https://unpkg.com/three@0.138.3/examples/jsm/loaders/GLTFLoader.js';
 const modelUrl = new URL('seal.glb', import.meta.url);
 
 //Scene init
